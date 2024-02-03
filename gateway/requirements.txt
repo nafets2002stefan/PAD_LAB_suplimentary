@@ -1,0 +1,8 @@
+Flask
+requests
+jsonify
+flask_caching
+circuitbreaker
+prometheus_flask_exporter
+pybreaker
+redis

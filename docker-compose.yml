@@ -1,0 +1,136 @@
+version: '3'
+
+networks:
+  example-network:
+    name: example-network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/16
+
+services:
+  gateway:
+    image: gateway:latest
+    ports:
+      - "5050:5050"
+    environment:
+      bets_host: http://localhost:3010
+      video_host: http://localhost:4000
+    depends_on:
+      - bets
+      - video
+      - redis-master
+    networks:
+      - example-network
+
+  bets:
+    image: betsmicroservice:latest
+    ports:
+      - "3010:3010"
+    networks:
+      - example-network
+    environment:
+      - PORT=3010
+
+  bets2:
+    image: betsmicroservice:latest
+    ports:
+      - "3011:3011"
+    networks:
+      - example-network
+    environment:
+      - PORT=3011
+
+  bets3:
+    image: betsmicroservice:latest
+    ports:
+      - "3012:3012"
+    networks:
+      - example-network
+    environment:
+      - PORT=3012
+
+  video:
+    image: videomicroservice
+    ports:
+      - "4000:4000"
+    networks:
+      - example-network
+    environment:
+      - PORT=4000
+
+  video2:
+    image: videomicroservice
+    ports:
+      - "4001:4001"
+    networks:
+      - example-network
+    environment:
+      - PORT=4001
+
+  video3:
+    image: videomicroservice
+    ports:
+      - "4002:4002"
+    networks:
+      - example-network
+    environment:
+      - PORT=4002
+
+  prometheus:
+    image: prom/prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - example-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    networks:
+      - example-network
+    depends_on:
+      - prometheus
+
+  redis-master:
+    image: 'redis:latest'
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - ./redis-master-data:/data
+    ports:
+      - '6379:6379'
+    networks:
+      - example-network
+
+  redis-slave:
+    image: 'redis:latest'
+    command: ['redis-server', '--appendonly', 'yes', '--slaveof', 'redis-master', '6379']
+    volumes:
+      - ./redis-slave-data:/data
+    ports:
+      - '6380:6379'
+    depends_on:
+      - redis-master
+    networks:
+      - example-network
+
+  redis-slave2:
+    image: 'redis:latest'
+    command: ['redis-server', '--appendonly', 'yes', '--slaveof', 'redis-master', '6379']
+    volumes:
+      - ./redis-slave-data:/data
+    ports:
+      - '6381:6379'
+    depends_on:
+      - redis-master
+    networks:
+      - example-network
